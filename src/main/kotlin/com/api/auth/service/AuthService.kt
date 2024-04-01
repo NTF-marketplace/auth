@@ -24,17 +24,24 @@ class AuthService(
         val expiresAtAccess = issuedAt.plus(3, ChronoUnit.DAYS)
 
         val accessToken = jwtBuilder.buildJwtToken(issuedAt,expiresAtAccess,request.address)
-        return saveRefreshToken(issuedAt,request.address).map {
+        return findOrCreate(issuedAt,request.address).map {
             JwtResponse(accessToken,it)
         }
     }
 
-    fun saveRefreshToken(issuedAt: Instant, address: String): Mono<String> {
+    fun findOrCreate(issuedAt: Instant,address: String): Mono<String> {
+        return refreshTokenRepository.findByWalletAddress(address)
+            .switchIfEmpty (
+                saveRefreshToken(issuedAt, address)
+            ).map { it.refreshToken }
+    }
+
+    fun saveRefreshToken(issuedAt: Instant, address: String): Mono<RefreshToken> {
         val expiresAtRefresh = issuedAt.plus(5,ChronoUnit.DAYS)
         val refreshToken = jwtBuilder.buildJwtToken(issuedAt,expiresAtRefresh, address)
 
        return refreshTokenRepository.save(
            RefreshToken(refreshToken = refreshToken, walletAddress = address)
-       ).map { it.refreshToken }
+       )
     }
 }

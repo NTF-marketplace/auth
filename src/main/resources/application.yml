@@ -16,7 +16,6 @@ spring:
     username: auth
     password: auth
 
-
-
 jwt:
-  secret-key: awmvskjviwlkdjsvnwjwjdkajmenwdj@=
+  rsa-key-path: "rsaKey.json"
+
