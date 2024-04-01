@@ -21,7 +21,7 @@ class AuthService(
     @Transactional
     fun createToken(request: JwtRequest): Mono<JwtResponse> {
         val issuedAt = Instant.now()
-        val expiresAtAccess = issuedAt.plus(3, ChronoUnit.DAYS)
+        val expiresAtAccess = issuedAt.plus(1, ChronoUnit.DAYS)
 
         val accessToken = jwtBuilder.buildJwtToken(issuedAt,expiresAtAccess,request.address)
         return findOrCreate(issuedAt,request.address).map {
