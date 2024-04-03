@@ -9,6 +9,7 @@ import com.api.auth.domain.RefreshTokenRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.switchIfEmpty
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -31,9 +32,12 @@ class AuthService(
 
     fun findOrCreate(issuedAt: Instant,address: String): Mono<String> {
         return refreshTokenRepository.findByWalletAddress(address)
-            .switchIfEmpty (
+            .flatMap {
+                updateRefreshToken(it, issuedAt, address)
+            }
+            .switchIfEmpty {
                 saveRefreshToken(issuedAt, address)
-            ).map { it.refreshToken }
+            }.map { it.refreshToken }
     }
 
     fun saveRefreshToken(issuedAt: Instant, address: String): Mono<RefreshToken> {
@@ -43,5 +47,14 @@ class AuthService(
        return refreshTokenRepository.save(
            RefreshToken(refreshToken = refreshToken, walletAddress = address)
        )
+    }
+
+    fun updateRefreshToken(refreshToken :RefreshToken,issuedAt: Instant, address: String): Mono<RefreshToken> {
+        val expiresAtRefresh = issuedAt.plus(5, ChronoUnit.DAYS)
+        val newRefreshToken = jwtBuilder.buildJwtToken(issuedAt, expiresAtRefresh, address)
+
+        refreshToken.refreshToken = newRefreshToken
+
+        return refreshTokenRepository.save(refreshToken)
     }
 }
