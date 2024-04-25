@@ -28,11 +28,12 @@ jobs:
     - name: Determine ECR Repository
       id: ecr_repo
       run: |
-        REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+        REPO_NAME=$(echo ${{ github.repository }} | awk -F '/' '{print $2}' | tr '[:upper:]' '[:lower:]')
+
         if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
-          echo "::set-output name=repo::${REPO_NAME}-prod"
+          echo "{repo}={${REPO_NAME}_prod}" >> $GITHUB_OUTPUT
         elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/feat/cicd" ]]; then
-          echo "::set-output name=repo::${REPO_NAME}-stag"
+          echo "{repo}={${REPO_NAME}_stag}" >> $GITHUB_OUTPUT
         else
           echo "::error::Unsupported event or branch: ${{ github.event_name }} on ${{ github.ref }}"
           exit 1
