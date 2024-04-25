@@ -27,8 +27,16 @@ jobs:
 
     - name: Determine ECR Repository
       id: ecr_repo
-      run: echo "::set-output name=repo::$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')-${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'prod' || github.event_name == 'push' && github.ref == 'refs/heads/feat/cicd' && 'stag' }}"
-      # run: echo "::set-output name=repo::$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')-${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'prod' || github.event_name == 'push' && github.ref == 'refs/heads/develop' && 'stag' }}"
+      run: |
+        REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "::set-output name=repo::${REPO_NAME}-prod"
+        elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/feat/cicd" ]]; then
+          echo "::set-output name=repo::${REPO_NAME}-stag"
+        else
+          echo "::error::Unsupported event or branch: ${{ github.event_name }} on ${{ github.ref }}"
+          exit 1
+        fi
 
     - name: Docker Build and Push
       env:
