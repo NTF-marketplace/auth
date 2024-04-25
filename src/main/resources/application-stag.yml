@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: auth
+
+  datasource:
+    url: jdbc:postgresql://cnpg-cluster-rw.database.svc.cluster.local:5432/auth
+    username: auth
+    password: auth
+  flyway:
+    locations: classpath:db/migration
+  r2dbc:
+    url: r2dbc:postgresql://cnpg-cluster-rw.database.svc.cluster.local:5432/auth
+    username: auth
+    password: auth
+
+jwt:
+  rsa-key-path: "rsaKey.json"
+
+########################
+# DevOps
+########################
+# Actuator, Prometheus, OpenTelemetry
+management: 
+  endpoints:
+    info:
+      enabled: true
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+    metrics:
+      enabled: true
+      export: 
+        prometheus:
+          enabled: true
+    prometheus:
+      enabled: true
+  tracing: 
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://otel-collector-opentelemetry-collector.tracing:9411/api/v2/spans
+logging:
+  pattern: 
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
