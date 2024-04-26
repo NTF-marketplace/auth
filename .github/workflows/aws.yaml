@@ -54,3 +54,35 @@ jobs:
       run: |
         docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ steps.ecr_repo.outputs.repo }}:${{ github.sha }} .
         docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ steps.ecr_repo.outputs.repo }}:${{ github.sha }}
+
+    - name: Checkout Private Repository
+      uses: actions/checkout@v4
+      with:
+        repository: NFT-marketplace/devops
+        fetch-depth: 0
+        ref: develop
+        token: ${{ secrets.PAT }}
+
+    - name: Replace image tag in helm values (LOCAL)
+      uses: mikefarah/yq@master
+      env:
+        IMAGE_TAG: ${{ github.sha }}
+      with:
+        cmd: yq eval -i '.image.tag = env(IMAGE_TAG)' 'chart/auth_stag/values.yaml'
+
+    - name: Commit helm chart changes
+      env:
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        cd chart
+        git config --global user.email "hun5879@naver.com"
+        git config --global user.name "dongdorrong"
+
+        git add values.yaml
+        git commit --message "ci: update auth_stag image tag to $IMAGE_TAG"
+
+    - name: Push commit
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.PAT }}
+        repository: NFT-marketplace/devops
