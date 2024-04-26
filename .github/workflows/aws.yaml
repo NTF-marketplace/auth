@@ -57,6 +57,7 @@ jobs:
 
     - name: Checkout Private Repository
       uses: actions/checkout@v4
+      with:
         repository: NTF-marketplace/devops
         fetch-depth: 0
         ref: develop
