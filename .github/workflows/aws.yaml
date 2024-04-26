@@ -3,9 +3,8 @@ name: Build and Push Docker Image to ECR
 on:
   push:
     branches:
-      # - main
-      # - develop
-      - feat/cicd
+      - main
+      - develop
 
 jobs:
   build:
@@ -29,13 +28,15 @@ jobs:
       id: ecr_repo
       run: |
         REPO_NAME=$(echo ${{ github.repository }} | awk -F '/' '{print $2}' | tr '[:upper:]' '[:lower:]')
+        
+        echo "repo=${REPO_NAME}" >> $GITHUB_OUTPUT
 
-        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
-          echo "repo=${REPO_NAME}_prod" >> $GITHUB_OUTPUT
-        elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/feat/cicd" ]]; then
-          echo "repo=${REPO_NAME}_stag" >> $GITHUB_OUTPUT
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "environment=prod" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+          echo "environment=stag" >> $GITHUB_OUTPUT
         else
-          echo "::error::Unsupported event or branch: ${{ github.event_name }} on ${{ github.ref }}"
+          echo "::error::Unsupported branch: ${{ github.event_name }} on ${{ github.ref }}"
           exit 1
         fi
 
@@ -52,8 +53,8 @@ jobs:
 
     - name: Docker Build and Push
       run: |
-        docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ steps.ecr_repo.outputs.repo }}:${{ github.sha }} .
-        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ steps.ecr_repo.outputs.repo }}:${{ github.sha }}
+        docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ steps.ecr_repo.outputs.repo }}_${{ steps.ecr_repo.outputs.environment }}:${{ github.sha }} .
+        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ steps.ecr_repo.outputs.repo }}_${{ steps.ecr_repo.outputs.environment }}:${{ github.sha }}
 
     - name: Checkout Private Repository
       uses: actions/checkout@v4
@@ -68,18 +69,18 @@ jobs:
       env:
         IMAGE_TAG: ${{ github.sha }}
       with:
-        cmd: yq eval -i '.image.tag = env(IMAGE_TAG)' 'chart/auth_stag/values.yaml'
+        cmd: yq eval -i '.image.tag = env(IMAGE_TAG)' 'chart/${{ steps.ecr_repo.outputs.repo }}_${{ steps.ecr_repo.outputs.environment }}/values.yaml'
 
     - name: Commit helm chart changes
       env:
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        cd chart/auth_stag
+        cd chart/${{ steps.ecr_repo.outputs.repo }}_${{ steps.ecr_repo.outputs.environment }}
         git config --global user.email "hun5879@naver.com"
         git config --global user.name "dongdorrong"
 
         git add values.yaml
-        git commit --message "ci: update auth_stag image tag to $IMAGE_TAG"
+        git commit --message "ci: update ${{ steps.ecr_repo.outputs.repo }}_${{ steps.ecr_repo.outputs.environment }} image tag to $IMAGE_TAG"
 
     - name: Push commit
       uses: ad-m/github-push-action@master
