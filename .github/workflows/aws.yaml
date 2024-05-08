@@ -28,7 +28,7 @@ jobs:
     - name: Determine ECR Repository
       id: ecr_repo
       run: |
-        REPO_NAME=$(echo ${{ github.repository }} | awk -F '/' '{print $2}' | tr '[:upper:]' '[:lower:]')
+        REPO_NAME="fix/github-action"
         
         echo "repo=${REPO_NAME}" >> $GITHUB_OUTPUT
 
