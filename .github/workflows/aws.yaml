@@ -28,7 +28,7 @@ jobs:
     - name: Determine ECR Repository
       id: ecr_repo
       run: |
-        REPO_NAME="fix/github-action"
+        REPO_NAME="auth"
         
         echo "repo=${REPO_NAME}" >> $GITHUB_OUTPUT
 
