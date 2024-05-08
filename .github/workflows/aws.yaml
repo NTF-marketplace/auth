@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - develop
-      - fix/github-action
 
 jobs:
   build:
@@ -28,7 +27,7 @@ jobs:
     - name: Determine ECR Repository
       id: ecr_repo
       run: |
-        REPO_NAME="auth"
+        REPO_NAME=$(echo ${{ github.repository }} | awk -F '/' '{print $2}' | tr '[:upper:]' '[:lower:]')
         
         echo "repo=${REPO_NAME}" >> $GITHUB_OUTPUT
 
@@ -37,7 +36,8 @@ jobs:
         elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
           echo "environment=stag" >> $GITHUB_OUTPUT
         else
-          echo "environment=stag" >> $GITHUB_OUTPUT
+          echo "::error::Unsupported branch: ${{ github.event_name }} on ${{ github.ref }}"
+          exit 1
         fi
 
     - name: Configure AWS credentials
