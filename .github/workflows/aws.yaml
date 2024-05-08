@@ -37,8 +37,7 @@ jobs:
         elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
           echo "environment=stag" >> $GITHUB_OUTPUT
         else
-          echo "::error::Unsupported branch: ${{ github.event_name }} on ${{ github.ref }}"
-          exit 1
+          echo "environment=stag" >> $GITHUB_OUTPUT
         fi
 
     - name: Configure AWS credentials
