@@ -22,9 +22,7 @@ class AuthService(
     @Transactional
     fun createToken(request: JwtRequest): Mono<JwtResponse> {
         val issuedAt = Instant.now()
-        val expiresAtAccess = issuedAt.plus(1, ChronoUnit.DAYS)
-
-        val accessToken = jwtBuilder.buildJwtToken(issuedAt,expiresAtAccess,request.address)
+        val accessToken = issueAccessToken(request.address,issuedAt)
         return findOrCreate(issuedAt,request.address).map {
             JwtResponse(accessToken,it)
         }
@@ -56,5 +54,17 @@ class AuthService(
         refreshToken.refreshToken = newRefreshToken
 
         return refreshTokenRepository.save(refreshToken)
+    }
+
+    private fun issueAccessToken(address: String, issuedAt: Instant): String {
+        val expiresAtAccess = issuedAt.plus(1, ChronoUnit.DAYS)
+
+        return jwtBuilder.buildJwtToken(issuedAt,expiresAtAccess,address)
+    }
+
+    fun reissueAccessToken(address: String): String {
+        val issuedAt = Instant.now()
+        return issueAccessToken(address,issuedAt)
+
     }
 }

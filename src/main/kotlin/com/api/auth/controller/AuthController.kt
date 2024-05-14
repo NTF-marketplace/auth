@@ -4,6 +4,11 @@ import com.api.auth.controller.dto.JwtRequest
 import com.api.auth.controller.dto.JwtResponse
 import com.api.auth.service.AuthService
 import com.nimbusds.oauth2.sdk.TokenRequest
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -17,7 +22,19 @@ class AuthController(
 ) {
 
     @PostMapping
-    fun createToken(@RequestBody request: JwtRequest): Mono<JwtResponse> {
+    fun createToken(@RequestBody request: JwtRequest): Mono<ResponseEntity<JwtResponse>> {
         return authService.createToken(request)
+            .flatMap {
+                Mono.just(ResponseEntity.ok().body(it))
+            }
+            .onErrorResume {
+                Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null))
+            }
+
+    }
+
+    @PostMapping("/reissue")
+    fun reissueAccessToken(authentication: Authentication): String {
+        return authService.reissueAccessToken(authentication.principal.toString())
     }
 }
