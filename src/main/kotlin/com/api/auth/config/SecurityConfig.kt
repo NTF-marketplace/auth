@@ -18,8 +18,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 class SecurityConfig(
     private val refreshTokenValidationFilter: RefreshTokenValidationFilter
 ) {
-
-
     @Bean
     fun webSecurityCustomizer(): WebSecurityCustomizer {
         return WebSecurityCustomizer { web: WebSecurity -> web.ignoring().requestMatchers("/v1/auth") }

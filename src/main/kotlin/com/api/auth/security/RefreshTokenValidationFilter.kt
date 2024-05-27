@@ -18,6 +18,11 @@ class RefreshTokenValidationFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
+
+        if (request.requestURI.equals("/v1/auth", ignoreCase = true)) {
+            filterChain.doFilter(request, response)
+            return
+        }
             val refreshToken = request.getHeader("Authorization")?.substring("Bearer ".length)
             if (refreshToken != null && jwtProvider.validateToken(refreshToken)) {
                 val address = jwtProvider.getClaimsFromToken(refreshToken)?.getClaim("address")
