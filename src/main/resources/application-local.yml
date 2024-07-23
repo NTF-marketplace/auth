@@ -1,0 +1,29 @@
+
+#spring:
+#  cloud:
+#    config:
+#      enabled: false
+#  datasource:
+#    url: jdbc:postgresql://localhost:5433/auth
+#    username: auth
+#    password: auth
+#  flyway:
+#    locations: classpath:db/migration
+#  r2dbc:
+#    url: r2dbc:postgresql://localhost:5433/auth
+#    username: auth
+#    password: auth
+#
+#jwt:
+#  rsa-key-path: "rsaKey.json"
+
+
+spring:
+  application:
+    name: auth
+  config:
+    import: "optional:configserver:http://localhost:9000"
+  cloud:
+    config:
+      fail-fast: true
+

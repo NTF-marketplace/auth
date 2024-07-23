@@ -8,10 +8,13 @@ import com.api.auth.service.AuthService
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.data.annotation.AccessType
+import org.springframework.test.context.ActiveProfiles
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 @SpringBootTest
+@ActiveProfiles("local")
 class JwtTest(
     @Autowired private val rsaKeyBuilder: RsaKeyBuilder,
     @Autowired private val jwtBuilder: JwtBuilder,
@@ -35,7 +38,7 @@ class JwtTest(
     @Test
     fun createToken1() {
         val request = JwtRequest(
-            address = "qweqwascfsadadfasd"
+            address = "test12345123"
         )
         authService.createToken(request).block()
     }
