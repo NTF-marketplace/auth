@@ -103,7 +103,10 @@ env:
 
 jobs:
   develop:
+    ### Reference
     # https://docs.github.com/ko/actions/publishing-packages/publishing-docker-images#github-packages%EC%97%90-%EC%9D%B4%EB%AF%B8%EC%A7%80-%EA%B2%8C%EC%8B%9C
+    ###
+
     # if: github.ref == 'refs/heads/develop'
     if: github.ref == 'refs/heads/fix/cicd'
     name: Build and Push Docker Image to GitHub Container Registry
@@ -131,6 +134,7 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY_DEV }}/${{ env.IMAGE_NAME }}
+          tags: type=sha
 
       - name: Set up JDK 21
         uses: actions/setup-java@v2
@@ -150,12 +154,23 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
+      # ### Error
+      # # [message] Failed to persist attestation
+      # # Feature not available for the NTF-marketplace organization.
+      # # To enable this feature, please upgrade the billing plan, or make this repository public.
+      # # https://docs.github.com/rest/repos/repos#create-an-attestation
+      # ###
+      # - name: Generate artifact attestation
+      #   uses: actions/attest-build-provenance@v1
+      #   with:
+      #     subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+      #     subject-digest: ${{ steps.push.outputs.digest }}
+      #     push-to-registry: true
+
+
+
+
+
 
       # - name: Docker Build and Push to GitHub Container Registry
       #   run: |
