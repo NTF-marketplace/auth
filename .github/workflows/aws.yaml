@@ -124,7 +124,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY_DEV }}
           username: ${{ github.actor }}
-          password: ${{ secrets.PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Container image
         id: meta
