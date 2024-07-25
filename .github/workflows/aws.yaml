@@ -7,95 +7,10 @@ on:
 #############################################
 #
 # Branch
-# - develop > github packages
-# - main    > amazon ecr repository
+# - develop > GitHub packages
+# - main    > Amazon ECR
 #
 #############################################
-
-# # [origin] start
-# jobs:
-#   build:
-#     name: Build Docker Image
-#     runs-on: ubuntu-latest
-
-#     steps:
-#     - name: Checkout Repository
-#       uses: actions/checkout@v3
-    
-#     - name: Set up JDK 21
-#       uses: actions/setup-java@v2
-#       with:
-#         distribution: 'adopt'
-#         java-version: '21'
-    
-#     - name: Build JAR
-#       run: ./gradlew build -x test
-
-#     - name: Determine ECR Repository
-#       id: ecr_repo
-#       run: |
-#         REPO_NAME=$(echo ${{ github.repository }} | awk -F '/' '{print $2}' | tr '[:upper:]' '[:lower:]')
-        
-#         echo "repo=${REPO_NAME}" >> $GITHUB_OUTPUT
-
-#         if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-#           echo "environment=prod" >> $GITHUB_OUTPUT
-#         elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-#           echo "environment=stag" >> $GITHUB_OUTPUT
-#         else
-#           echo "::error::Unsupported branch: ${{ github.event_name }} on ${{ github.ref }}"
-#           exit 1
-#         fi
-
-#     - name: Configure AWS credentials
-#       uses: aws-actions/configure-aws-credentials@v2
-#       with:
-#         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#         aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-
-#     - name: Login to Amazon ECR
-#       id: login-ecr
-#       uses: aws-actions/amazon-ecr-login@v2
-
-#     - name: Docker Build and Push
-#       run: |
-#         docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ steps.ecr_repo.outputs.repo }}_${{ steps.ecr_repo.outputs.environment }}:${{ github.sha }} .
-#         docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ steps.ecr_repo.outputs.repo }}_${{ steps.ecr_repo.outputs.environment }}:${{ github.sha }}
-
-#     - name: Checkout Private Repository
-#       uses: actions/checkout@v4
-#       with:
-#         repository: NTF-marketplace/devops
-#         fetch-depth: 0
-#         ref: develop
-#         token: ${{ secrets.PAT }}
-
-#     - name: Replace image tag in helm values (LOCAL)
-#       uses: mikefarah/yq@master
-#       env:
-#         IMAGE_TAG: ${{ github.sha }}
-#       with:
-#         cmd: yq eval -i '.image.tag = env(IMAGE_TAG)' 'chart/${{ steps.ecr_repo.outputs.repo }}_${{ steps.ecr_repo.outputs.environment }}/values.yaml'
-
-#     - name: Commit helm chart changes
-#       env:
-#         IMAGE_TAG: ${{ github.sha }}
-#       run: |
-#         cd chart/${{ steps.ecr_repo.outputs.repo }}_${{ steps.ecr_repo.outputs.environment }}
-#         git config --global user.email "hun5879@naver.com"
-#         git config --global user.name "dongdorrong"
-
-#         git add values.yaml
-#         git commit --message "ci: update ${{ steps.ecr_repo.outputs.repo }}_${{ steps.ecr_repo.outputs.environment }} image tag to $IMAGE_TAG"
-
-#     - name: Push commit
-#       uses: ad-m/github-push-action@master
-#       with:
-#         github_token: ${{ secrets.PAT }}
-#         repository: NTF-marketplace/devops
-#         branch: develop
-# # [origin] end
 
 jobs:
   develop:
@@ -103,8 +18,7 @@ jobs:
     # https://docs.github.com/ko/actions/publishing-packages/publishing-docker-images#github-packages%EC%97%90-%EC%9D%B4%EB%AF%B8%EC%A7%80-%EA%B2%8C%EC%8B%9C
     ###
 
-    # if: github.ref == 'refs/heads/develop'
-    if: github.ref == 'refs/heads/fix/cicd'
+    if: github.ref == 'refs/heads/develop'
     name: Build and Push Container Image to GitHub Container Registry
     runs-on: ubuntu-latest
     env:
@@ -198,89 +112,89 @@ jobs:
           repository: NTF-marketplace/devops
           branch: develop
 
-  # main:
-  #   # if: github.ref == 'refs/heads/main'
-  #   if: github.ref == 'refs/heads/fix/cicd'
-  #   name: Build and Push Container Image to Amazon ECR
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     REPOSITORY: auth
-  #     ENVIRONMENT: prod
-  #   permissions:
-  #     contents: read
-  #     packages: write
-  #     attestations: write
-  #     id-token: write
+  main:
+    # if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/fix/cicd'
+    name: Build and Push Container Image to Amazon ECR
+    runs-on: ubuntu-latest
+    env:
+      REPOSITORY: auth
+      ENVIRONMENT: prod
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Configure AWS credentials
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-  #     - name: Login to Amazon ECR
-  #       id: login-ecr
-  #       uses: aws-actions/amazon-ecr-login@v2
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-  #     - name: Extract metadata (tags, labels) for Container image
-  #       id: meta
-  #       uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-  #       with:
-  #         images: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com
-  #         tags: type=sha
+      - name: Extract metadata (tags, labels) for Container image
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com
+          tags: type=sha
 
-  #     - name: Set up JDK 21
-  #       uses: actions/setup-java@v2
-  #       with:
-  #         distribution: 'adopt'
-  #         java-version: '21'
+      - name: Set up JDK 21
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '21'
     
-  #     - name: Build JAR
-  #       run: ./gradlew clean build -x test
+      - name: Build JAR
+        run: ./gradlew clean build -x test
 
-  #     - name: Build and push Docker image
-  #       id: push
-  #       uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
-  #       with:
-  #         context: .
-  #         push: true
-  #         tags: ${{ steps.meta.outputs.tags }}
-  #         labels: ${{ steps.meta.outputs.labels }}
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
-  #     - name: Checkout Private Repository
-  #       uses: actions/checkout@v4
-  #       with:
-  #         repository: NTF-marketplace/devops
-  #         fetch-depth: 0
-  #         ref: develop
-  #         token: ${{ secrets.PAT }}
+      - name: Checkout Private Repository
+        uses: actions/checkout@v4
+        with:
+          repository: NTF-marketplace/devops
+          fetch-depth: 0
+          ref: develop
+          token: ${{ secrets.PAT }}
 
-  #     - name: Replace image tag in helm values.yaml
-  #       uses: mikefarah/yq@master
-  #       env:
-  #         IMAGE_TAG: ${{ steps.meta.outputs.tags }}
-  #       with:
-  #         cmd: yq eval -i '.image.tag = env(IMAGE_TAG)' 'chart/${{ env.REPOSITORY }}_${{ env.ENVIRONMENT }}/values.yaml'
+      - name: Replace image tag in helm values.yaml
+        uses: mikefarah/yq@master
+        env:
+          IMAGE_TAG: ${{ steps.meta.outputs.tags }}
+        with:
+          cmd: yq eval -i '.image.tag = env(IMAGE_TAG)' 'chart/${{ env.REPOSITORY }}_${{ env.ENVIRONMENT }}/values.yaml'
 
-  #     - name: Commit helm chart changes
-  #       env:
-  #         IMAGE_TAG: ${{ steps.meta.outputs.tags }}
-  #       run: |
-  #         cd chart/${{ env.REPOSITORY }}_${{ env.ENVIRONMENT }}
-  #         git config --global user.email "hun5879@naver.com"
-  #         git config --global user.name "dongdorrong"
+      - name: Commit helm chart changes
+        env:
+          IMAGE_TAG: ${{ steps.meta.outputs.tags }}
+        run: |
+          cd chart/${{ env.REPOSITORY }}_${{ env.ENVIRONMENT }}
+          git config --global user.email "hun5879@naver.com"
+          git config --global user.name "dongdorrong"
 
-  #         git add values.yaml
-  #         git commit --message "ci: update ${{ env.REPOSITORY }}_${{ env.ENVIRONMENT }} image tag to $IMAGE_TAG"
+          git add values.yaml
+          git commit --message "ci: update ${{ env.REPOSITORY }}_${{ env.ENVIRONMENT }} image tag to $IMAGE_TAG"
 
-  #     - name: Push commit
-  #       uses: ad-m/github-push-action@master
-  #       with:
-  #         github_token: ${{ secrets.PAT }}
-  #         repository: NTF-marketplace/devops
-  #         branch: develop
+      - name: Push commit
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.PAT }}
+          repository: NTF-marketplace/devops
+          branch: develop
