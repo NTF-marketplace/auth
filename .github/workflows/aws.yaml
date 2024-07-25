@@ -184,7 +184,7 @@ jobs:
         env:
           IMAGE_TAG: ${{ steps.meta.outputs.tags }}
         run: |
-          cd chart/${{ github.repository }}_${{ env.ENVIRONMENT }}
+          cd chart/${{ env.REPOSITORY }}_${{ env.ENVIRONMENT }}
           git config --global user.email "hun5879@naver.com"
           git config --global user.name "dongdorrong"
 
