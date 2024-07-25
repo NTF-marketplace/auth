@@ -108,7 +108,8 @@ jobs:
     name: Build and Push Docker Image to GitHub Container Registry
     runs-on: ubuntu-latest
     env:
-      TARGET_ENVIRONMENT: dev
+      ENVIRONMENT: dev
+      REPOSITORY: auth
     permissions:
       contents: read
       packages: write
@@ -177,23 +178,18 @@ jobs:
         env:
           IMAGE_TAG: ${{ steps.meta.outputs.tags }}
         with:
-          cmd: |
-            REPO_NAME=$(echo ${{ github.repository }} | awk -F '/' '{print $2}' | tr '[:upper:]' '[:lower:]')
-
-            yq eval -i '.image.tag = env(IMAGE_TAG)' 'chart/${{REPO_NAME}}_${{ env.TARGET_ENVIRONMENT }}/values.yaml'
+          cmd: yq eval -i '.image.tag = env(IMAGE_TAG)' 'chart/${{ env.REPOSITORY }}_${{ env.ENVIRONMENT }}/values.yaml'
 
       - name: Commit helm chart changes
         env:
           IMAGE_TAG: ${{ steps.meta.outputs.tags }}
         run: |
-          REPO_NAME=$(echo ${{ github.repository }} | awk -F '/' '{print $2}' | tr '[:upper:]' '[:lower:]')
-
-          cd chart/${{ github.repository }}_${{ env.TARGET_ENVIRONMENT }}
+          cd chart/${{ github.repository }}_${{ env.ENVIRONMENT }}
           git config --global user.email "hun5879@naver.com"
           git config --global user.name "dongdorrong"
 
           git add values.yaml
-          git commit --message "ci: update ${{REPO_NAME}}_${{ env.TARGET_ENVIRONMENT }} image tag to $IMAGE_TAG"
+          git commit --message "ci: update ${{ env.REPOSITORY }}_${{ env.ENVIRONMENT }} image tag to $IMAGE_TAG"
 
       - name: Push commit
         uses: ad-m/github-push-action@master
