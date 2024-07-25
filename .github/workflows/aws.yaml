@@ -177,7 +177,7 @@ jobs:
         env:
           IMAGE_TAG: ${{ steps.meta.outputs.tags }}
         with:
-          cmd: yq eval -i '.image.tag = env(IMAGE_TAG)' 'chart/${{ github.repository }}_${{ env.TARGET_ENVIRONMENT }}/values.yaml'
+          cmd: yq eval -i '.image.tag = env(IMAGE_TAG)' 'chart/${{ github.repository_id }}_${{ env.TARGET_ENVIRONMENT }}/values.yaml'
 
       - name: Commit helm chart changes
         env:
@@ -188,7 +188,7 @@ jobs:
           git config --global user.name "dongdorrong"
 
           git add values.yaml
-          git commit --message "ci: update ${{ github.repository }}_${{ env.TARGET_ENVIRONMENT }} image tag to $IMAGE_TAG"
+          git commit --message "ci: update ${{ github.repository_id }}_${{ env.TARGET_ENVIRONMENT }} image tag to $IMAGE_TAG"
 
       - name: Push commit
         uses: ad-m/github-push-action@master
