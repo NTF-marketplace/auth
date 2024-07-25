@@ -2,7 +2,7 @@ name: Create and publish a container image, update helm chart 'appVersion'
 
 on:
   push:
-    branches: ["main", "develop", "fix/cicd"]
+    branches: ["main", "develop"]
 
 #############################################
 #
@@ -113,8 +113,7 @@ jobs:
           branch: develop
 
   main:
-    # if: github.ref == 'refs/heads/main'
-    if: github.ref == 'refs/heads/fix/cicd'
+    if: github.ref == 'refs/heads/main'
     name: Build and Push Container Image to Amazon ECR
     runs-on: ubuntu-latest
     env:
