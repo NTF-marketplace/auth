@@ -97,10 +97,6 @@ on:
 #         branch: develop
 # # [origin] end
 
-env:
-  REGISTRY_DEV: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
   develop:
     ### Reference
@@ -111,7 +107,8 @@ jobs:
     if: github.ref == 'refs/heads/fix/cicd'
     name: Build and Push Docker Image to GitHub Container Registry
     runs-on: ubuntu-latest
-  
+    env:
+      TARGET_ENVIRONMENT: dev
     permissions:
       contents: read
       packages: write
@@ -122,7 +119,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Log in to the Container registry
+      - name: Log in to the GitHub container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
           registry: ${{ env.REGISTRY_DEV }}
@@ -133,7 +130,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: ${{ env.REGISTRY_DEV }}/${{ env.IMAGE_NAME }}
+          images: ghcr.io/${{ github.repository }}
           tags: type=sha
 
       - name: Set up JDK 21
@@ -163,53 +160,42 @@ jobs:
       # - name: Generate artifact attestation
       #   uses: actions/attest-build-provenance@v1
       #   with:
-      #     subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+      #     subject-name: ${{ env.REGISTRY }}/${{ github.repository }}
       #     subject-digest: ${{ steps.push.outputs.digest }}
       #     push-to-registry: true
 
+      - name: Checkout Private Repository
+        uses: actions/checkout@v4
+        with:
+          repository: NTF-marketplace/devops
+          fetch-depth: 0
+          ref: develop
+          token: ${{ secrets.PAT }}
 
+      - name: Replace image tag in helm values.yaml
+        uses: mikefarah/yq@master
+        env:
+          IMAGE_TAG: ${{ steps.meta.outputs.tags }}
+        with:
+          cmd: yq eval -i '.image.tag = env(IMAGE_TAG)' 'chart/${{ github.repository }}_$TARGET_ENVIRONMENT/values.yaml'
 
+      - name: Commit helm chart changes
+        env:
+          IMAGE_TAG: ${{ steps.meta.outputs.tags }}
+        run: |
+          cd chart/${{ github.repository }}_$TARGET_ENVIRONMENT
+          git config --global user.email "hun5879@naver.com"
+          git config --global user.name "dongdorrong"
 
+          git add values.yaml
+          git commit --message "ci: update ${{ github.repository }}_$TARGET_ENVIRONMENT image tag to $IMAGE_TAG"
 
-
-      # - name: Docker Build and Push to GitHub Container Registry
-      #   run: |
-      #     docker build -t ghcr.io/${{ github.repository }}:${{ github.sha }} .
-      #     echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      #     docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
-
-      # - name: Checkout Private Repository
-      #   uses: actions/checkout@v4
-      #   with:
-      #     repository: NTF-marketplace/devops
-      #     fetch-depth: 0
-      #     ref: develop
-      #     token: ${{ secrets.PAT }}
-
-      # - name: Replace image tag in helm values (LOCAL)
-      #   uses: mikefarah/yq@master
-      #   env:
-      #     IMAGE_TAG: ${{ github.sha }}
-      #   with:
-      #     cmd: yq eval -i '.image.tag = env(IMAGE_TAG)' 'chart/my-repo_dev/values.yaml'
-
-      # - name: Commit helm chart changes
-      #   env:
-      #     IMAGE_TAG: ${{ github.sha }}
-      #   run: |
-      #     cd chart/my-repo_dev
-      #     git config --global user.email "hun5879@naver.com"
-      #     git config --global user.name "dongdorrong"
-
-      #     git add values.yaml
-      #     git commit --message "ci: update my-repo_dev image tag to $IMAGE_TAG"
-
-      # - name: Push commit
-      #   uses: ad-m/github-push-action@master
-      #   with:
-      #     github_token: ${{ secrets.PAT }}
-      #     repository: NTF-marketplace/devops
-      #     branch: develop
+      - name: Push commit
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.PAT }}
+          repository: NTF-marketplace/devops
+          branch: develop
 
   # main:
   #   if: github.ref == 'refs/heads/main'
